@@ -69,6 +69,16 @@ namespace Invoice_System.Data
             modelBuilder.Entity<InvoiceItem>()
                 .Property(ii => ii.UnitPrice)
                 .HasPrecision(18, 2);
+
+            modelBuilder.Entity<Product>()
+        .Property(p => p.UnitPrice)
+        .HasPrecision(18, 2);
+
+            modelBuilder.Entity<User>()
+        .Property(u => u.Role)
+        .HasConversion<string>(); // ✅ Saves as 'Admin' or 'Cashier' in DB
+
+            base.OnModelCreating(modelBuilder);
         }
     }
 }

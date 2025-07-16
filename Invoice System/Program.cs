@@ -3,11 +3,17 @@ using Invoice_System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-
 using Invoice_System.Services;
 using Invoice_System.profiles;
+using Invoice_System.Helpers;
+using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authorization;
+using BCrypt.Net;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add HttpContextAccessor
+builder.Services.AddHttpContextAccessor();
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -20,15 +26,14 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddAutoMapper(typeof(AdminProfile));
 
-
 // Configure Database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString)
 );
 
-// JWT configuration: use config values, never hardcoded!
-var jwtKey = builder.Configuration["Jwt:Key"];
+// JWT configuration
+var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key is missing");
 var issuer = builder.Configuration["Jwt:Issuer"];
 var audience = builder.Configuration["Jwt:Audience"];
 
@@ -43,16 +48,45 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
            ValidateIssuerSigningKey = true,
            ValidIssuer = issuer,
            ValidAudience = audience,
-           IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey ?? "FallbackSecretKey"))
+           IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
        };
    });
 
+// Add this after AddAuthentication()
+builder.Services.AddAuthorization(options =>
+{
+    options.DefaultPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
 
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireRole("Admin"));
+});
+
+// Register services
+builder.Services.AddScoped<JwtTokenService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<ICashierService, CashierService>();
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+
+
+// Configure Swagger
+builder.Services.AddSwaggerGen(c =>
+{
+    c.CustomSchemaIds(type => type.FullName);
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "JWT Authorization header using the Bearer scheme",
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey
+    });
+});
 
 var app = builder.Build();
 

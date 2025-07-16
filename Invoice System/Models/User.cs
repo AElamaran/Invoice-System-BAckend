@@ -1,22 +1,25 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Invoice_System.Models;
+using System.ComponentModel.DataAnnotations;
 
-namespace Invoice_System.Models
+public enum UserRole
 {
-    public class User
-    {
-        public int Id { get; set; }
+    Admin,
+    Cashier
+}
 
-        [Required]
-        [StringLength(50, MinimumLength = 3)]
-        public string Username { get; set; }
+public class User
+{
+    public int Id { get; set; }
 
-        [Required]
-        public string PasswordHash { get; set; } // Store hashed password
+    [Required]
+    [StringLength(50, MinimumLength = 3)]
+    public string Username { get; set; }
 
-        [Required]
-        [RegularExpression("^(Admin|Cashier)$", ErrorMessage = "Role must be either 'Admin' or 'Cashier'")]
-        public string Role { get; set; }
+    [Required]
+    public string PasswordHash { get; set; }
 
-        public ICollection<Invoice> Invoices { get; set; }
-    }
+    [Required]
+    public UserRole Role { get; set; }  // ✅ Enum type here
+
+    public ICollection<Invoice> Invoices { get; set; }
 }
