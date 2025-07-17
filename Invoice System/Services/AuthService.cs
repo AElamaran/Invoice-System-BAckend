@@ -49,12 +49,14 @@ namespace Invoice_System.Services
                 throw new Exception("Invalid username or password");
             }
 
-            // Password verification with enhanced entropy
-            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(
-                dto.Password,
-                user.PasswordHash,
-                enhancedEntropy: true
-            );
+            //// Password verification with enhanced entropy
+            //bool isPasswordValid = BCrypt.Net.BCrypt.Verify(
+            //    dto.Password,
+            //    user.PasswordHash,
+            //    enhancedEntropy: true
+            //);
+            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash);
+
 
             if (!isPasswordValid)
             {
